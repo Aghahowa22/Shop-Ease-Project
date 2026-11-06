@@ -1,0 +1,24 @@
+export type Category = "Electronics" | "Fashion" | "Home" | "Beauty";
+
+export type CategoryFilter = Category | "All";
+
+export interface Product {
+  id: number;
+  name: string;
+  price: number;
+  category: Category;
+  image: string;
+  description: string;
+  rating: number;
+  stock: number;
+}
+
+export type CreateProductInput = Omit<Product, "id">;
+
+// Text boxes always give strings, so form values are all strings.
+export type ProductFormValues = Record<keyof CreateProductInput, string>;
+
+// One optional message per field.
+export type ProductFormErrors = Partial<
+  Record<keyof CreateProductInput, string>
+>;
