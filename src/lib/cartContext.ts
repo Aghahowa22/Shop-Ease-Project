@@ -7,8 +7,8 @@ export interface CartContextValue {
   count: number; // total units, for the Navbar badge
   total: number; // total price
   addItem: (product: Product, quantity?: number) => void;
-  removeItem: (productId: number) => void;
-  setQuantity: (productId: number, quantity: number) => void;
+  removeItem: (productId: Product["id"]) => void;
+  setQuantity: (productId: Product["id"], quantity: number) => void;
   clearCart: () => void;
 }
 

@@ -10,7 +10,7 @@ import {
 import type { Product, CreateProductInput } from "../types/product";
 
 interface UpdateProductVariables {
-  id: number;
+  id: string | number;
   input: CreateProductInput;
 }
 
@@ -23,11 +23,13 @@ export function useProducts(limit?: number) {
 }
 
 // Fetch one product.
-export function useProduct(id: number): UseQueryResult<Product> {
+export function useProduct(id: string | number): UseQueryResult<Product> {
   return useQuery({
     queryKey: queryKeys.products.detail(id),
     queryFn: () => getProductById(id),
-    enabled: Number.isInteger(id) && id > 0,
+    enabled:
+      (typeof id === "number" && Number.isInteger(id) && id > 0) ||
+      (typeof id === "string" && id.trim().length > 0),
   });
 }
 
@@ -36,7 +38,7 @@ export function useDeleteProduct() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => deleteProduct(id),
+    mutationFn: (id: string | number) => deleteProduct(id),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.products.all,

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { buildNewOrder, validateShipping } from "./checkout";
 import type { CartItem } from "../types/cart";
 import type { Product } from "../types/product";
@@ -10,8 +10,9 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
 
 const validShipping: ShippingDetails = {
   fullName: "Ada Obi",
-  address: "12 Marina Road",
+  addressLine1: "12 Marina Road",
   city: "Lagos",
+  country: "Nigeria",
   phone: "+234 801-234-5678",
 };
 
@@ -20,14 +21,20 @@ describe("validateShipping", () => {
     expect(validateShipping(validShipping)).toEqual({});
   });
 
-  it("reports a too-short name, address and city", () => {
+  it("reports a too-short name, address, city and country", () => {
     const errors = validateShipping({
       ...validShipping,
       fullName: " A ",
-      address: "123",
+      addressLine1: "12",
       city: "L",
+      country: "N",
     });
-    expect(Object.keys(errors).sort()).toEqual(["address", "city", "fullName"]);
+    expect(Object.keys(errors).sort()).toEqual([
+      "addressLine1",
+      "city",
+      "country",
+      "fullName",
+    ]);
   });
 
   it.each([
@@ -52,51 +59,40 @@ describe("validateShipping", () => {
 });
 
 describe("buildNewOrder", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-10-18T10:00:00.000Z"));
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   const items: CartItem[] = [
     { product: makeProduct(), quantity: 3 },
     { product: makeProduct({ id: 2, name: "Lamp", price: 45 }), quantity: 1 },
   ];
 
-  it("copies names and prices into order lines", () => {
-    const order = buildNewOrder(7, items, validShipping);
-    expect(order.lines).toEqual([
-      { productId: 1, name: "Mug", unitPrice: 19.99, quantity: 3 },
-      { productId: 2, name: "Lamp", unitPrice: 45, quantity: 1 },
+  it("sends only item IDs and quantities", () => {
+    const order = buildNewOrder(items, validShipping);
+    expect(order.items).toEqual([
+      { productId: 1, quantity: 3 },
+      { productId: 2, quantity: 1 },
     ]);
   });
 
-  it("totals the order in whole cents", () => {
-    expect(buildNewOrder(7, items, validShipping).total).toBe(104.97);
-  });
-
   it("trims the shipping fields", () => {
-    const order = buildNewOrder(7, items, {
+    const order = buildNewOrder(items, {
       fullName: "  Ada Obi ",
-      address: " 12 Marina Road  ",
+      addressLine1: " 12 Marina Road  ",
       city: " Lagos ",
+      country: " Nigeria ",
       phone: " 08012345678 ",
     });
-    expect(order.shipping).toEqual({
+    expect(order.shippingAddress).toEqual({
       fullName: "Ada Obi",
-      address: "12 Marina Road",
+      addressLine1: "12 Marina Road",
       city: "Lagos",
+      country: "Nigeria",
       phone: "08012345678",
     });
   });
 
-  it("sets the user, status and creation time", () => {
-    const order = buildNewOrder(7, items, validShipping);
-    expect(order.userId).toBe(7);
-    expect(order.status).toBe("placed");
-    expect(order.createdAt).toBe("2026-10-18T10:00:00.000Z");
+  it("does not send client-controlled customer, price or status fields", () => {
+    const order = buildNewOrder(items, validShipping);
+    expect(order).not.toHaveProperty("userId");
+    expect(order).not.toHaveProperty("total");
+    expect(order).not.toHaveProperty("status");
   });
 });

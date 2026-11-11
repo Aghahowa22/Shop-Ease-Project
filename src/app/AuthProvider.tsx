@@ -4,14 +4,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AuthContext } from "../lib/authContext";
 import type { AuthContextValue } from "../lib/authContext";
 import { AUTH_STORAGE_KEY } from "../lib/constants";
-import type { User } from "../types/auth";
+import { ACCESS_TOKEN_STORAGE_KEY } from "../services/api";
+import type { AuthSession, User } from "../types/auth";
 
 // Anyone can edit localStorage, so we check the shape instead of trusting it.
 function isUser(value: unknown): value is User {
   if (typeof value !== "object" || value === null) return false;
   const candidate = value as Record<string, unknown>;
   return (
-    typeof candidate.id === "number" &&
+    (typeof candidate.id === "string" || typeof candidate.id === "number") &&
     typeof candidate.name === "string" &&
     typeof candidate.email === "string"
   );
@@ -55,10 +56,11 @@ function AuthProvider({ children }: AuthProviderProps) {
     return () => window.removeEventListener("storage", handleStorage);
   }, [queryClient]);
 
-  const signIn = useCallback((nextUser: User): void => {
-    setUser(nextUser);
+  const signIn = useCallback((session: AuthSession): void => {
+    setUser(session.user);
     try {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextUser));
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session.user));
+      localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, session.accessToken);
     } catch {
       // Storage unavailable: the user stays signed in until the page is refreshed.
     }
@@ -68,6 +70,7 @@ function AuthProvider({ children }: AuthProviderProps) {
     setUser(null);
     try {
       localStorage.removeItem(AUTH_STORAGE_KEY);
+      localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
     } catch {
       // Nothing to clean up if storage is unavailable.
     }

@@ -6,7 +6,6 @@ import { ArrowLeft } from "lucide-react";
 import Button from "../components/ui/Button";
 import { getErrorMessage } from "../services/api";
 import { useProduct, useUpdateProduct } from "../hooks/useProducts";
-import { parseId } from "../lib/utils";
 import type {
   Category,
   CreateProductInput,
@@ -17,7 +16,7 @@ const categories: Category[] = ["Electronics", "Fashion", "Home", "Beauty"];
 
 function EditProductPage() {
   const { id } = useParams();
-  const productId = parseId(id);
+  const productId = id && id.trim() !== "" ? id : null;
 
   const {
     data: product,
@@ -25,7 +24,7 @@ function EditProductPage() {
     isError,
     error,
     refetch,
-  } = useProduct(productId ?? 0);
+  } = useProduct(productId ?? "");
 
   if (productId === null) {
     return <p className="text-red-600">Invalid product ID.</p>;
@@ -56,7 +55,7 @@ function EditProductForm({
   productId,
 }: {
   product: NonNullable<ReturnType<typeof useProduct>["data"]>;
-  productId: number;
+  productId: string;
 }) {
   const navigate = useNavigate();
   const {

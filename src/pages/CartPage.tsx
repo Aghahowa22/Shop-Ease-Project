@@ -1,4 +1,5 @@
 import { ShoppingCart } from "lucide-react";
+import { useNavigate } from "react-router";
 import CartItemRow from "../components/cart/CartItemRow";
 import CartSummary from "../components/cart/CartSummary";
 import EmptyState from "../components/ui/EmptyState";
@@ -6,6 +7,7 @@ import { useCart } from "../hooks/useCart";
 
 function CartPage() {
   const { items } = useCart();
+  const navigate = useNavigate();
 
   if (items.length === 0) {
     return (
@@ -14,7 +16,7 @@ function CartPage() {
         title="Your cart is empty"
         description="Add something you like and it will show up here."
         actionLabel="Browse products"
-        onAction={() => window.location.assign("/products")}
+        onAction={() => navigate("/products")}
       />
     );
   }

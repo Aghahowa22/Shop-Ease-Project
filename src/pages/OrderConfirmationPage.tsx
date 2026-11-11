@@ -1,177 +1,114 @@
-import { useEffect, useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
-import { useAuth } from "../hooks/useAuth";
-import { useCart } from "../hooks/useCart";
-import { useCreateOrder } from "../hooks/useCreateOrder";
-import { getLineTotal } from "../lib/cartReducer";
-import { buildNewOrder, validateShipping } from "../lib/checkout";
-import type { ShippingErrors } from "../lib/checkout";
+import { CheckCircle2, MapPin, Package } from "lucide-react";
+import { Link, useParams } from "react-router";
+import ErrorMessage from "../components/ui/ErrorMessage";
+import Spinner from "../components/ui/Spinner";
+import { useOrder } from "../hooks/useOrder";
 import { formatPrice } from "../lib/utils";
 import { getErrorMessage } from "../services/api";
-import type { ShippingDetails } from "../types/order";
 
-interface FieldConfig {
-  name: keyof ShippingDetails;
-  label: string;
-  autoComplete: string;
-  type: "text" | "tel";
-}
+function OrderConfirmationPage() {
+  const { id } = useParams();
+  const orderId = id && id.trim() !== "" ? id : "";
+  const { data: order, isPending, isError, error, refetch } = useOrder(orderId);
 
-const FIELDS: FieldConfig[] = [
-  { name: "fullName", label: "Full name", autoComplete: "name", type: "text" },
-  {
-    name: "address",
-    label: "Street address",
-    autoComplete: "street-address",
-    type: "text",
-  },
-  { name: "city", label: "City", autoComplete: "address-level2", type: "text" },
-  { name: "phone", label: "Phone number", autoComplete: "tel", type: "tel" },
-];
+  if (!orderId) {
+    return (
+      <ErrorMessage
+        title="That order link is not valid"
+        message="The order ID is missing from the address."
+      />
+    );
+  }
 
-function CheckoutPage() {
-  const { user } = useAuth();
-  const { items, total, clearCart } = useCart();
-  const { mutate, isPending, isError, error } = useCreateOrder();
+  if (isPending) {
+    return (
+      <div className="flex items-center gap-2 text-slate-600">
+        <Spinner size="sm" label="Loading order" />
+        <span>Loading your order...</span>
+      </div>
+    );
+  }
 
-  const [shipping, setShipping] = useState<ShippingDetails>({
-    fullName: user?.name ?? "",
-    address: "",
-    city: "",
-    phone: "",
-  });
-  const [errors, setErrors] = useState<ShippingErrors>({});
-  const [placedOrderId, setPlacedOrderId] = useState<number | null>(null);
+  if (isError || order === undefined) {
+    return (
+      <ErrorMessage
+        title="We could not load this order"
+        message={getErrorMessage(error)}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
 
-  // Order matters: a placed order must win over "the cart is now empty".
-  const redirectTo =
-    placedOrderId !== null
-      ? `/orders/${placedOrderId}`
-      : user === null
-        ? "/login"
-        : items.length === 0
-          ? "/cart"
-          : null;
-
-  useEffect(() => {
-    if (redirectTo !== null) window.location.replace(redirectTo);
-  }, [redirectTo]);
-
-  if (redirectTo !== null) return null;
-
-  const handleChange =
-    (field: keyof ShippingDetails) =>
-    (event: ChangeEvent<HTMLInputElement>): void => {
-      const { value } = event.target;
-      setShipping((previous) => ({ ...previous, [field]: value }));
-    };
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault();
-
-    const nextErrors = validateShipping(shipping);
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
-    if (user === null) return;
-
-    mutate(buildNewOrder(user.id, items, shipping), {
-      onSuccess: (order) => {
-        setPlacedOrderId(order.id);
-        clearCart();
-      },
-    });
-  };
+  const { shippingAddress } = order;
 
   return (
-    <section>
-      <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-        Checkout
-      </h1>
+    <section className="mx-auto max-w-3xl">
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center sm:p-8">
+        <CheckCircle2
+          className="mx-auto h-12 w-12 text-emerald-600"
+          aria-hidden="true"
+        />
+        <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900">
+          Order confirmed
+        </h1>
+        <p className="mt-2 text-slate-600">
+          Thanks for your order. We will prepare it for delivery shortly.
+        </p>
+        <p className="mt-3 text-sm font-medium text-slate-700">
+          Order #{order.id}
+        </p>
+      </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_22rem] lg:items-start">
-        <form onSubmit={handleSubmit} noValidate className="space-y-5">
-          <h2 className="text-lg font-semibold text-slate-900">
-            Shipping details
+      <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <section className="rounded-xl border border-slate-200 bg-white p-6">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+            <Package className="h-5 w-5 text-indigo-600" aria-hidden="true" />
+            Items
           </h2>
-
-          {FIELDS.map((field) => {
-            const errorId = `${field.name}-error`;
-            const message = errors[field.name];
-            return (
-              <div key={field.name}>
-                <label
-                  htmlFor={field.name}
-                  className="mb-1 block text-sm font-medium text-slate-700"
-                >
-                  {field.label}
-                </label>
-                <input
-                  id={field.name}
-                  name={field.name}
-                  type={field.type}
-                  autoComplete={field.autoComplete}
-                  value={shipping[field.name]}
-                  onChange={handleChange(field.name)}
-                  aria-invalid={message !== undefined}
-                  aria-describedby={message !== undefined ? errorId : undefined}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus-visible:outline-2 focus-visible:outline-indigo-600"
-                />
-                {message !== undefined && (
-                  <p id={errorId} className="mt-1 text-sm text-red-600">
-                    {message}
-                  </p>
-                )}
-              </div>
-            );
-          })}
-
-          <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
-            Payment: <strong>pay on delivery</strong>. You won't be charged
-            online.
-          </p>
-
-          {isError && (
-            <p role="alert" className="text-sm text-red-600">
-              {getErrorMessage(error)}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={isPending}
-            className="w-full rounded-lg bg-indigo-600 px-4 py-3 font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-          >
-            {isPending
-              ? "Placing order..."
-              : `Place order (${formatPrice(total)})`}
-          </button>
-        </form>
-
-        <aside className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Your order</h2>
           <ul className="mt-4 divide-y divide-slate-200">
-            {items.map((item) => (
-              <li
-                key={item.product.id}
-                className="flex justify-between gap-3 py-3 text-sm"
-              >
+            {order.items.map((item) => (
+              <li key={item.id} className="flex justify-between gap-4 py-3">
                 <span className="text-slate-700">
-                  {item.product.name} x {item.quantity}
+                  {item.productName} × {item.quantity}
                 </span>
-                <span className="tabular-nums font-medium text-slate-900">
-                  {formatPrice(getLineTotal(item))}
+                <span className="shrink-0 font-medium tabular-nums text-slate-900">
+                  {formatPrice(item.subtotal)}
                 </span>
               </li>
             ))}
           </ul>
-          <p className="mt-4 flex justify-between border-t border-slate-200 pt-4 font-bold text-slate-900">
+          <p className="mt-4 flex justify-between border-t border-slate-200 pt-4 text-lg font-bold text-slate-900">
             <span>Total</span>
-            <span className="tabular-nums">{formatPrice(total)}</span>
+            <span className="tabular-nums">{formatPrice(order.totalAmount)}</span>
           </p>
-        </aside>
+        </section>
+
+        <section className="rounded-xl border border-slate-200 bg-white p-6">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+            <MapPin className="h-5 w-5 text-indigo-600" aria-hidden="true" />
+            Delivery address
+          </h2>
+          <address className="mt-4 not-italic leading-7 text-slate-700">
+            <p className="font-medium text-slate-900">{shippingAddress.fullName}</p>
+            <p>{shippingAddress.addressLine1}</p>
+            <p>{shippingAddress.city}</p>
+            <p>{shippingAddress.country}</p>
+            <p className="mt-3">{shippingAddress.phone}</p>
+          </address>
+          <p className="mt-6 text-sm text-slate-600">
+            Status: <span className="font-medium">{order.status}</span>
+          </p>
+        </section>
       </div>
+
+      <Link
+        to="/products"
+        className="mt-8 inline-flex rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+      >
+        Continue shopping
+      </Link>
     </section>
   );
 }
 
-export default CheckoutPage;
+export default OrderConfirmationPage;

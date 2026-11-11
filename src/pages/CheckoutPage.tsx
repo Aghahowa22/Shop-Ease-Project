@@ -20,12 +20,18 @@ interface FieldConfig {
 const FIELDS: FieldConfig[] = [
   { name: "fullName", label: "Full name", autoComplete: "name", type: "text" },
   {
-    name: "address",
+    name: "addressLine1",
     label: "Street address",
     autoComplete: "street-address",
     type: "text",
   },
   { name: "city", label: "City", autoComplete: "address-level2", type: "text" },
+  {
+    name: "country",
+    label: "Country",
+    autoComplete: "country-name",
+    type: "text",
+  },
   { name: "phone", label: "Phone number", autoComplete: "tel", type: "tel" },
 ];
 
@@ -36,12 +42,15 @@ function CheckoutPage() {
 
   const [shipping, setShipping] = useState<ShippingDetails>({
     fullName: user?.name ?? "",
-    address: "",
+    addressLine1: "",
     city: "",
+    country: "",
     phone: "",
   });
   const [errors, setErrors] = useState<ShippingErrors>({});
-  const [placedOrderId, setPlacedOrderId] = useState<number | null>(null);
+  const [placedOrderId, setPlacedOrderId] = useState<string | number | null>(
+    null,
+  );
 
   // Order matters: a placed order must win over "the cart is now empty".
   const redirectTo =
@@ -74,7 +83,7 @@ function CheckoutPage() {
     if (Object.keys(nextErrors).length > 0) return;
     if (user === null) return;
 
-    mutate(buildNewOrder(user.id, items, shipping), {
+    mutate(buildNewOrder(items, shipping), {
       onSuccess: (order) => {
         setPlacedOrderId(order.id);
         clearCart();

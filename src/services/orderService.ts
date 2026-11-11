@@ -1,12 +1,14 @@
 import { api } from "./api";
-import type { NewOrder, Order } from "../types/order";
+import type { CreateOrderInput, Order } from "../types/order";
 
-export async function createOrder(order: NewOrder): Promise<Order> {
-  const { data } = await api.post<Order>("/orders", order);
-  return data;
+type ApiResponse<T> = { success: boolean; data: T };
+
+export async function createOrder(order: CreateOrderInput): Promise<Order> {
+  const { data } = await api.post<ApiResponse<Order>>("/orders", order);
+  return data.data;
 }
 
-export async function getOrderById(id: number): Promise<Order> {
-  const { data } = await api.get<Order>(`/orders/${id}`);
-  return data;
+export async function getOrderById(id: string | number): Promise<Order> {
+  const { data } = await api.get<ApiResponse<Order>>(`/orders/${id}`);
+  return data.data;
 }

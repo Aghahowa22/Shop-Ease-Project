@@ -4,6 +4,6 @@ export const queryKeys = {
     all: ["products"] as const,
     lists: ["products", "list"] as const, // matches every list, whatever its limit
     list: (limit?: number) => ["products", "list", { limit }] as const,
-    detail: (id: number) => ["products", "detail", id] as const,
+    detail: (id: string | number) => ["products", "detail", id] as const,
   },
 } as const;
