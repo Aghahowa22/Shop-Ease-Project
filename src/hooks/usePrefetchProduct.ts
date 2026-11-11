@@ -5,11 +5,11 @@ import { getProductById } from "../services/productService";
 
 // Returns a function that quietly loads a product's details into the cache.
 // Call it on hover or focus so the details page opens instantly.
-export function usePrefetchProduct(): (id: number) => void {
+export function usePrefetchProduct(): (id: string | number) => void {
   const queryClient = useQueryClient();
 
   return useCallback(
-    (id: number): void => {
+    (id: string | number): void => {
       void queryClient.prefetchQuery({
         queryKey: queryKeys.products.detail(id),
         queryFn: () => getProductById(id),

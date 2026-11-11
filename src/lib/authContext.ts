@@ -1,10 +1,11 @@
 import { createContext } from "react";
 import type { User } from "../types/auth";
+import type { AuthSession } from "../types/auth";
 
 export interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
-  signIn: (user: User) => void;
+  signIn: (session: AuthSession) => void;
   signOut: () => void;
 }
 

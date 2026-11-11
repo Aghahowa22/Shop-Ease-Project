@@ -1,4 +1,4 @@
-import { act, screen } from "@testing-library/react";
+import { act, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Link, useLocation } from "react-router";
 import { useCart } from "../../hooks/useCart";
@@ -48,11 +48,9 @@ describe("AddToCartButton", () => {
 
   it("confirms with 'Added', announces it, then goes back after 1.5 seconds", async () => {
     vi.useFakeTimers();
-    const { user } = renderApp(<AddToCartButton product={mug} />, {
-      fakeTimers: true,
-    });
+    renderApp(<AddToCartButton product={mug} />);
 
-    await user.click(screen.getByRole("button", { name: "Add to cart: Mug" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to cart: Mug" }));
 
     expect(
       screen.getByRole("button", { name: "Added: Mug" }),

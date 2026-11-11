@@ -1,11 +1,13 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AUTH_STORAGE_KEY } from "../lib/constants";
+import { ACCESS_TOKEN_STORAGE_KEY } from "../services/api";
 import { createTestQueryClient, createWrapper } from "../test/wrappers";
-import type { User } from "../types/auth";
+import type { AuthSession, User } from "../types/auth";
 import { useAuth } from "./useAuth";
 
 const ada: User = { id: 1, name: "Ada Obi", email: "ada@example.com" };
+const adaSession: AuthSession = { user: ada, accessToken: "test-token" };
 
 // Pretends another tab changed storage (the browser never fires this in the same tab).
 function fireStorageEvent(key: string | null): void {
@@ -33,13 +35,14 @@ describe("useAuth", () => {
       wrapper: createWrapper(),
     });
 
-    act(() => result.current.signIn(ada));
+    act(() => result.current.signIn(adaSession));
 
     expect(result.current.user).toEqual(ada);
     expect(result.current.isAuthenticated).toBe(true);
     expect(
       JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) ?? "null"),
     ).toEqual(ada);
+    expect(localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)).toBe("test-token");
   });
 
   it("signOut clears the user and the saved copy", () => {
@@ -47,11 +50,12 @@ describe("useAuth", () => {
       wrapper: createWrapper(),
     });
 
-    act(() => result.current.signIn(ada));
+    act(() => result.current.signIn(adaSession));
     act(() => result.current.signOut());
 
     expect(result.current.user).toBeNull();
     expect(localStorage.getItem(AUTH_STORAGE_KEY)).toBeNull();
+    expect(localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)).toBeNull();
   });
 
   it("restores a saved user on mount", () => {
@@ -129,7 +133,7 @@ describe("useAuth", () => {
       wrapper: createWrapper(queryClient),
     });
 
-    act(() => result.current.signIn(ada));
+    act(() => result.current.signIn(adaSession));
     act(() => fireStorageEvent("something-else"));
 
     expect(result.current.user).toEqual(ada);

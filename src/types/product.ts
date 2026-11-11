@@ -1,9 +1,11 @@
-export type Category = "Electronics" | "Fashion" | "Home" | "Beauty";
+export type Category = string;
 
 export type CategoryFilter = Category | "All";
 
 export interface Product {
-  id: number;
+  // The live API uses UUIDs. Keeping number here as well preserves the local
+  // mock-data tests while the app transitions to the deployed backend.
+  id: string | number;
   name: string;
   price: number;
   category: Category;

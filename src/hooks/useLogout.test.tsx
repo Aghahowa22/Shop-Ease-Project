@@ -1,11 +1,12 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { createTestQueryClient, createWrapper } from "../test/wrappers";
-import type { User } from "../types/auth";
+import type { AuthSession, User } from "../types/auth";
 import { useAuth } from "./useAuth";
 import { useLogout } from "./useLogout";
 
 const ada: User = { id: 1, name: "Ada Obi", email: "ada@example.com" };
+const adaSession: AuthSession = { user: ada, accessToken: "test-token" };
 
 describe("useLogout", () => {
   it("signs the user out and empties the query cache", () => {
@@ -20,7 +21,7 @@ describe("useLogout", () => {
       },
     );
 
-    act(() => result.current.auth.signIn(ada));
+    act(() => result.current.auth.signIn(adaSession));
     expect(result.current.auth.user).toEqual(ada);
 
     act(() => result.current.logout());

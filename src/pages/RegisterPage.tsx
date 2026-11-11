@@ -1,4 +1,4 @@
-import { useContext, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   ShoppingBag,
@@ -11,17 +11,11 @@ import {
   LoaderCircle,
   AlertCircle,
 } from "lucide-react";
-import { AuthContext } from "../lib/authContext";
-import { api } from "../services/api";
-import type { User } from "../types/auth";
-
-interface RegisterRecord extends User {
-  password: string;
-}
+import { useRegister } from "../hooks/useRegister";
 
 function RegisterPage() {
-  const auth = useContext(AuthContext);
   const navigate = useNavigate();
+  const { mutate, isPending, isError, error: registerError } = useRegister();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -30,16 +24,10 @@ function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  async function handleRegister(event: FormEvent<HTMLFormElement>) {
+  function handleRegister(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-
-    if (!auth) {
-      setError("Authentication is not configured.");
-      return;
-    }
 
     if (password.length < 6) {
       setError("Your password must be at least 6 characters.");
@@ -51,41 +39,17 @@ function RegisterPage() {
       return;
     }
 
-    setLoading(true);
-
-    try {
-      const response = await api.get<RegisterRecord[]>("/users");
-
-      const existingUser = response.data.find(
-        (user) => user.email.toLowerCase() === email.trim().toLowerCase(),
-      );
-
-      if (existingUser) {
-        setError("This email is already registered. Please sign in.");
-        return;
-      }
-
-      const result = await api.post<RegisterRecord>("/users", {
+    mutate(
+      {
         name: name.trim(),
         email: email.trim(),
         password,
-      });
-
-      auth.signIn({
-        id: result.data.id,
-        name: result.data.name,
-        email: result.data.email,
-      });
-
-      navigate("/");
-    } catch {
-      setError(
-        "Could not create your account. Please check your connection and try again.",
-      );
-    } finally {
-      setLoading(false);
-    }
+      },
+      { onSuccess: () => navigate("/") },
+    );
   }
+
+  const errorMessage = error || (isError ? registerError.message : "");
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10">
@@ -230,22 +194,22 @@ function RegisterPage() {
             </div>
           </div>
 
-          {error && (
+          {errorMessage && (
             <div
               role="alert"
               className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 p-3 text-sm text-red-700"
             >
               <AlertCircle size={18} className="mt-0.5 shrink-0" />
-              <p>{error}</p>
+              <p>{errorMessage}</p>
             </div>
           )}
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isPending}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3.5 font-bold text-white shadow-md shadow-indigo-200 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? (
+            {isPending ? (
               <>
                 <LoaderCircle size={19} className="animate-spin" />
                 Creating account...

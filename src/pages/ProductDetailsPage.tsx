@@ -14,7 +14,7 @@ import {
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
 import ErrorMessage from "../components/ui/ErrorMessage";
-import { formatPrice, parseId } from "../lib/utils";
+import { formatPrice } from "../lib/utils";
 import { getErrorMessage, isNotFoundError } from "../services/api";
 import { deleteProduct, getProductById } from "../services/productService";
 import type { Product } from "../types/product";
@@ -51,7 +51,7 @@ function DetailsSkeleton() {
 function ProductDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const productId = parseId(id);
+  const productId = id && id.trim() !== "" ? id : null;
 
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -325,7 +325,7 @@ function ProductDetailsPage() {
     if (productId === null) {
       return renderNotFound(
         "That product link is not valid",
-        "The address does not contain a valid product number. Head back to the list and pick a product.",
+        "The address does not contain a valid product ID. Head back to the list and pick a product.",
       );
     }
 

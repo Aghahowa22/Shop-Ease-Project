@@ -44,12 +44,12 @@ function CartProvider({ children }: CartProviderProps) {
     dispatch({ type: "add", product, quantity });
   }, []);
 
-  const removeItem = useCallback((productId: number): void => {
+  const removeItem = useCallback((productId: Product["id"]): void => {
     dispatch({ type: "remove", productId });
   }, []);
 
   const setQuantity = useCallback(
-    (productId: number, quantity: number): void => {
+    (productId: Product["id"], quantity: number): void => {
       dispatch({ type: "setQuantity", productId, quantity });
     },
     [],

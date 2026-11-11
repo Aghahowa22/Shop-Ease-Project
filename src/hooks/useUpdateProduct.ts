@@ -1,17 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UseMutationResult } from "@tanstack/react-query";
+import { queryKeys } from "../lib/queryKeys";
 import { updateProduct } from "../services/productService";
 import type { Product } from "../types/product";
 
-const queryKeys = {
-  products: {
-    detail: (id: number) => ["products", "detail", id] as const,
-    lists: ["products", "list"] as const,
-  },
-};
-
 export type UpdateProductVariables = {
-  id: number;
+  id: string | number;
   input: Parameters<typeof updateProduct>[1];
 };
 
@@ -29,7 +23,7 @@ export function useUpdateProduct(): UseMutationResult<
     onSuccess: (updated) => {
       queryClient.setQueryData(queryKeys.products.detail(updated.id), updated);
       return queryClient.invalidateQueries({
-        queryKey: queryKeys.products.lists,
+        queryKey: queryKeys.products.lists(),
       });
     },
   });

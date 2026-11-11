@@ -13,8 +13,8 @@ function isCartItem(value: unknown): value is CartItem {
 
   const { product, quantity } = value;
   return (
-    typeof product.id === "number" &&
-    Number.isFinite(product.id) &&
+    ((typeof product.id === "number" && Number.isFinite(product.id)) ||
+      (typeof product.id === "string" && product.id.length > 0)) &&
     typeof product.name === "string" &&
     typeof product.price === "number" &&
     Number.isFinite(product.price) &&
